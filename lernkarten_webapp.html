@@ -1,0 +1,343 @@
+
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<h2 class="sr-only">Lernkarten Web-App – Karteikarten lernen im Browser</h2>
+<div id="root"></div>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans);color:var(--color-text-primary);background:transparent}
+.app{max-width:480px;margin:0 auto;padding:12px}
+.header{display:flex;align-items:center;justify-content:space-between;padding:12px 0 16px}
+.header h1{font-size:20px;font-weight:500}
+.btn-icon{background:none;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);width:34px;height:34px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--color-text-primary);font-size:18px;transition:background 0.15s}
+.btn-icon:hover{background:var(--color-background-secondary)}
+.stack-list{display:flex;flex-direction:column;gap:8px}
+.stack-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:14px;transition:border-color 0.15s}
+.stack-card:hover{border-color:var(--color-border-secondary)}
+.emoji-box{width:48px;height:48px;border-radius:var(--border-radius-md);background:var(--color-background-secondary);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+.stack-info{flex:1;min-width:0}
+.stack-name{font-size:15px;font-weight:500}
+.stack-sub{font-size:12px;color:var(--color-text-secondary);margin-top:2px}
+.progress-bar{height:4px;border-radius:2px;background:var(--color-background-secondary);margin-top:6px;overflow:hidden}
+.progress-fill{height:100%;background:#3B6D11;border-radius:2px;transition:width 0.3s}
+.modal-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.35);display:flex;align-items:flex-end;justify-content:center;z-index:100}
+.modal{background:var(--color-background-primary);border-radius:var(--border-radius-xl) var(--border-radius-xl) 0 0;padding:20px;width:100%;max-height:90%;overflow-y:auto}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.modal-title{font-size:17px;font-weight:500}
+.form-section{margin-bottom:16px}
+.form-label{font-size:12px;color:var(--color-text-secondary);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.04em}
+.form-input{width:100%;padding:10px 12px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:15px;background:var(--color-background-primary);color:var(--color-text-primary);outline:none;resize:none}
+.form-input:focus{border-color:var(--color-border-primary)}
+.emoji-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+.emoji-pick{width:100%;aspect-ratio:1;border-radius:var(--border-radius-md);background:var(--color-background-secondary);border:1.5px solid transparent;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;transition:background 0.15s}
+.emoji-pick.selected{border-color:#534AB7;background:#EEEDFE}
+.btn-row{display:flex;gap:10px;margin-top:4px}
+.btn{padding:10px 18px;border-radius:var(--border-radius-md);font-size:14px;font-weight:500;cursor:pointer;border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary);flex:1;transition:background 0.15s}
+.btn:hover{background:var(--color-background-secondary)}
+.btn.primary{background:#534AB7;color:#EEEDFE;border-color:#534AB7}
+.btn.primary:hover{background:#3C3489}
+.btn.primary:disabled{opacity:0.4;cursor:not-allowed}
+.btn.danger{color:#A32D2D;border-color:var(--color-border-secondary)}
+.detail-header{display:flex;align-items:center;gap:10px;padding:12px 0 16px}
+.back-btn{background:none;border:none;cursor:pointer;font-size:22px;color:var(--color-text-secondary);padding:0 4px 0 0}
+.detail-title{font-size:19px;font-weight:500}
+.progress-section{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;margin-bottom:12px}
+.progress-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:13px;color:var(--color-text-secondary)}
+.learn-btn{width:100%;padding:11px;border-radius:var(--border-radius-md);background:#534AB7;color:#EEEDFE;border:none;font-size:15px;font-weight:500;cursor:pointer;margin-top:12px;display:flex;align-items:center;justify-content:center;gap:8px;transition:background 0.15s}
+.learn-btn:hover{background:#3C3489}
+.section-header{font-size:12px;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em;margin:16px 0 8px}
+.card-item{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:12px 14px;display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.card-texts{flex:1;min-width:0}
+.card-q{font-size:14px;font-weight:500}
+.card-a{font-size:12px;color:var(--color-text-secondary);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dots{display:flex;gap:3px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--color-background-secondary);border:1px solid var(--color-border-secondary)}
+.dot.filled{background:#3B6D11;border-color:#3B6D11}
+.dot-wrap{display:flex;flex-direction:column;align-items:center;gap:3px}
+.dot-label{font-size:9px;color:var(--color-text-secondary)}
+.delete-btn{background:none;border:none;cursor:pointer;color:var(--color-text-secondary);font-size:16px;padding:2px 4px;border-radius:4px;opacity:0.5}
+.delete-btn:hover{opacity:1;color:#A32D2D}
+.learn-screen{position:absolute;inset:0;background:var(--color-background-secondary);display:flex;flex-direction:column;z-index:200;padding:16px}
+.learn-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.learn-counter{font-size:14px;color:var(--color-text-secondary)}
+.card-flip-wrap{flex:1;display:flex;align-items:center;justify-content:center;perspective:1000px;cursor:pointer}
+.card-flip{width:100%;max-width:420px;height:260px;position:relative;transform-style:preserve-3d;transition:transform 0.4s ease}
+.card-flip.flipped{transform:rotateY(180deg)}
+.card-face{position:absolute;inset:0;backface-visibility:hidden;border-radius:var(--border-radius-xl);background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);padding:20px;display:flex;flex-direction:column}
+.card-face.back{transform:rotateY(180deg)}
+.card-badge{display:inline-block;font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;margin-bottom:12px}
+.card-badge.frage{background:#E6F1FB;color:#0C447C}
+.card-badge.antwort{background:#EEEDFE;color:#3C3489}
+.card-text{flex:1;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:500;text-align:center;line-height:1.5}
+.hint{text-align:center;font-size:12px;color:var(--color-text-secondary);margin:10px 0}
+.action-btns{display:flex;gap:12px}
+.action-btn{flex:1;padding:13px;border-radius:var(--border-radius-md);border:none;font-size:15px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background 0.15s}
+.action-btn.wrong{background:#FCEBEB;color:#A32D2D}
+.action-btn.wrong:hover{background:#F7C1C1}
+.action-btn.right{background:#EAF3DE;color:#3B6D11}
+.action-btn.right:hover{background:#C0DD97}
+.finish-screen{position:absolute;inset:0;background:var(--color-background-secondary);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:32px;z-index:200;text-align:center}
+.finish-emoji{font-size:72px}
+.finish-title{font-size:24px;font-weight:500}
+.finish-sub{font-size:15px;color:var(--color-text-secondary);line-height:1.6}
+.reset-btn{background:none;border:none;cursor:pointer;font-size:12px;color:#A32D2D;padding:0}
+.empty-state{text-align:center;padding:40px 20px;color:var(--color-text-secondary);font-size:14px}
+</style>
+<script>
+const {useState,useEffect,useRef} = React;
+const EMOJIS = ["📚","🧪","🌍","📐","🎨","🎵","💻","🏛️","🔬","📖","🇩🇪","🇬🇧","🇪🇸","🇫🇷"];
+const DEFAULTS = [
+  {id:"s1",name:"Englisch",emoji:"🇬🇧",karten:[
+    {id:"k1",frage:"What does 'ambiguous' mean?",antwort:"mehrdeutig – etwas, das mehrere Bedeutungen hat",richtig:0},
+    {id:"k2",frage:"What does 'perseverance' mean?",antwort:"Ausdauer, Beharrlichkeit",richtig:0},
+    {id:"k3",frage:"Translate: 'It is raining cats and dogs'",antwort:"Es regnet in Strömen",richtig:0}
+  ]},
+  {id:"s2",name:"Mathe",emoji:"📐",karten:[
+    {id:"k4",frage:"Was ist der Satz des Pythagoras?",antwort:"a² + b² = c²  –  in einem rechtwinkligen Dreieck",richtig:0},
+    {id:"k5",frage:"Wie lautet die Formel für den Kreisumfang?",antwort:"U = 2 · π · r",richtig:0}
+  ]}
+];
+
+function uid(){return Math.random().toString(36).slice(2)+Date.now().toString(36)}
+function fortschritt(karten){if(!karten.length)return 0;return karten.filter(k=>k.richtig>=3).length/karten.length}
+
+function load(){try{const d=localStorage.getItem("lernkarten");return d?JSON.parse(d):null}catch{return null}}
+function save(data){try{localStorage.setItem("lernkarten",JSON.stringify(data))}catch{}}
+
+function App(){
+  const [stapel,setStapel]=useState(()=>load()||DEFAULTS);
+  const [view,setView]=useState("list");
+  const [activeId,setActiveId]=useState(null);
+  const [modal,setModal]=useState(null);
+  const [lernen,setLernen]=useState(false);
+  const containerRef=useRef(null);
+
+  useEffect(()=>{save(stapel)},[stapel]);
+
+  const update=fn=>{setStapel(prev=>{const next=fn([...prev]);save(next);return next})};
+
+  function addStapel(name,emoji){
+    update(s=>[...s,{id:uid(),name,emoji,karten:[]}]);
+  }
+  function delStapel(id){update(s=>s.filter(x=>x.id!==id))}
+  function addKarte(sid,frage,antwort){
+    update(s=>s.map(x=>x.id===sid?{...x,karten:[...x.karten,{id:uid(),frage,antwort,richtig:0}]}:x));
+  }
+  function delKarte(sid,kid){
+    update(s=>s.map(x=>x.id===sid?{...x,karten:x.karten.filter(k=>k.id!==kid)}:x));
+  }
+  function richtigGewusst(sid,kid){
+    update(s=>s.map(x=>x.id===sid?{...x,karten:x.karten.map(k=>k.id===kid?{...k,richtig:k.richtig+1}:k)}:x));
+  }
+  function resetAll(sid){
+    update(s=>s.map(x=>x.id===sid?{...x,karten:x.karten.map(k=>({...k,richtig:0}))}:x));
+  }
+
+  const aktStapel=stapel.find(x=>x.id===activeId);
+
+  return React.createElement("div",{ref:containerRef,style:{position:"relative",minHeight:"500px"}},
+    view==="list"&&React.createElement(ListView,{stapel,onOpen:id=>{setActiveId(id);setView("detail")},onAdd:()=>setModal("stapel")}),
+    view==="detail"&&aktStapel&&!lernen&&React.createElement(DetailView,{
+      stapel:aktStapel,onBack:()=>setView("list"),onLernen:()=>setLernen(true),
+      onAddKarte:()=>setModal("karte"),onDelKarte:kid=>delKarte(activeId,kid),
+      onReset:()=>resetAll(activeId)
+    }),
+    lernen&&aktStapel&&React.createElement(LernView,{
+      stapel:aktStapel,onDone:()=>setLernen(false),
+      richtigGewusst:kid=>richtigGewusst(activeId,kid)
+    }),
+    modal==="stapel"&&React.createElement(StapelModal,{onClose:()=>setModal(null),onSave:(n,e)=>{addStapel(n,e);setModal(null)}}),
+    modal==="karte"&&aktStapel&&React.createElement(KarteModal,{onClose:()=>setModal(null),onSave:(f,a)=>{addKarte(activeId,f,a)}})
+  );
+}
+
+function ListView({stapel,onOpen,onAdd}){
+  return React.createElement("div",{className:"app"},
+    React.createElement("div",{className:"header"},
+      React.createElement("h1",null,"Meine Stapel"),
+      React.createElement("button",{className:"btn-icon",onClick:onAdd,title:"Neuer Stapel"},"+")
+    ),
+    stapel.length===0&&React.createElement("div",{className:"empty-state"},"Noch keine Stapel. Erstelle deinen ersten!"),
+    React.createElement("div",{className:"stack-list"},
+      stapel.map(s=>React.createElement("div",{key:s.id,className:"stack-card",onClick:()=>onOpen(s.id)},
+        React.createElement("div",{className:"emoji-box"},s.emoji),
+        React.createElement("div",{className:"stack-info"},
+          React.createElement("div",{className:"stack-name"},s.name),
+          React.createElement("div",{className:"stack-sub"},s.karten.length+" Karten · "+s.karten.filter(k=>k.richtig>=3).length+" gewusst"),
+          React.createElement("div",{className:"progress-bar"},
+            React.createElement("div",{className:"progress-fill",style:{width:Math.round(fortschritt(s.karten)*100)+"%"}})
+          )
+        ),
+        React.createElement("span",{style:{color:"var(--color-text-secondary)",fontSize:"18px"}},"›")
+      ))
+    )
+  );
+}
+
+function DetailView({stapel,onBack,onLernen,onAddKarte,onDelKarte,onReset}){
+  const fp=fortschritt(stapel.karten);
+  const gewusst=stapel.karten.filter(k=>k.richtig>=3).length;
+  return React.createElement("div",{className:"app"},
+    React.createElement("div",{className:"detail-header"},
+      React.createElement("button",{className:"back-btn",onClick:onBack},"‹"),
+      React.createElement("span",{style:{fontSize:"22px"}},stapel.emoji),
+      React.createElement("h1",{className:"detail-title"},stapel.name)
+    ),
+    React.createElement("div",{className:"progress-section"},
+      React.createElement("div",{className:"progress-meta"},
+        React.createElement("span",null,gewusst+" / "+stapel.karten.length+" gewusst"),
+        React.createElement("button",{className:"reset-btn",onClick:onReset},"Zurücksetzen")
+      ),
+      React.createElement("div",{className:"progress-bar",style:{height:"6px"}},
+        React.createElement("div",{className:"progress-fill",style:{width:Math.round(fp*100)+"%"}})
+      ),
+      stapel.karten.length>0&&React.createElement("button",{className:"learn-btn",onClick:onLernen},
+        React.createElement("span",{style:{fontSize:"14px"}},"▶"),
+        "Jetzt lernen"
+      )
+    ),
+    React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
+      React.createElement("div",{className:"section-header",style:{margin:"12px 0 8px"}},
+        "Karten ("+stapel.karten.length+")"
+      ),
+      React.createElement("button",{className:"btn-icon",onClick:onAddKarte,style:{width:"28px",height:"28px",fontSize:"15px"}},"+")
+    ),
+    stapel.karten.length===0&&React.createElement("div",{className:"empty-state"},"Noch keine Karten. Füge deine erste hinzu!"),
+    stapel.karten.map(k=>{
+      const g=k.richtig>=3;
+      const color=g?"#3B6D11":k.richtig>0?"#BA7517":"var(--color-text-secondary)";
+      return React.createElement("div",{key:k.id,className:"card-item"},
+        React.createElement("div",{className:"dot-wrap"},
+          React.createElement("div",{className:"dots"},
+            [0,1,2].map(i=>React.createElement("div",{key:i,className:"dot"+(i<k.richtig?" filled":""),style:i<k.richtig?{background:g?"#3B6D11":"#BA7517",borderColor:g?"#3B6D11":"#BA7517"}:{}}))
+          ),
+          !g&&React.createElement("div",{className:"dot-label"},k.richtig+"/3")
+        ),
+        React.createElement("div",{className:"card-texts"},
+          React.createElement("div",{className:"card-q"},k.frage),
+          React.createElement("div",{className:"card-a"},k.antwort)
+        ),
+        React.createElement("button",{className:"delete-btn",onClick:e=>{e.stopPropagation();onDelKarte(k.id)}},"×")
+      );
+    })
+  );
+}
+
+function LernView({stapel,onDone,richtigGewusst}){
+  const [idx,setIdx]=useState(0);
+  const [flipped,setFlipped]=useState(false);
+  const [fertig,setFertig]=useState(false);
+  const [localStapel,setLocal]=useState(stapel);
+
+  const offene=localStapel.karten.filter(k=>k.richtig<3);
+  const karte=offene[Math.min(idx,offene.length-1)];
+
+  function flip(){setFlipped(f=>!f)}
+  function next(gewusst){
+    if(gewusst){
+      richtigGewusst(karte.id);
+      const updated=localStapel.karten.map(k=>k.id===karte.id?{...k,richtig:k.richtig+1}:k);
+      setLocal({...localStapel,karten:updated});
+      const neuOffen=updated.filter(k=>k.richtig<3);
+      if(!neuOffen.length){setFertig(true);return;}
+      setFlipped(false);
+      setIdx(i=>Math.min(i,neuOffen.length-1));
+    } else {
+      setFlipped(false);
+      const neuOffen=localStapel.karten.filter(k=>k.richtig<3);
+      setIdx(i=>(i+1)%neuOffen.length);
+    }
+  }
+
+  if(fertig||offene.length===0){
+    return React.createElement("div",{className:"finish-screen"},
+      React.createElement("div",{className:"finish-emoji"},"🎉"),
+      React.createElement("div",{className:"finish-title"},"Alle Karten gewusst!"),
+      React.createElement("div",{className:"finish-sub"},"Super gemacht! Du hast alle Karten in diesem Durchgang richtig beantwortet."),
+      React.createElement("button",{className:"btn primary",style:{maxWidth:"220px"},onClick:onDone},"Zurück zur Übersicht")
+    );
+  }
+
+  return React.createElement("div",{className:"learn-screen"},
+    React.createElement("div",{className:"learn-top"},
+      React.createElement("button",{className:"btn-icon",onClick:onDone},"×"),
+      React.createElement("span",{className:"learn-counter"},(Math.min(idx,offene.length-1)+1)+" / "+offene.length)
+    ),
+    React.createElement("div",{className:"card-flip-wrap",onClick:flip},
+      React.createElement("div",{className:"card-flip"+(flipped?" flipped":"")},
+        React.createElement("div",{className:"card-face"},
+          React.createElement("div",{className:"card-badge frage"},"FRAGE"),
+          React.createElement("div",{className:"card-text"},karte.frage),
+          React.createElement("div",{style:{display:"flex",gap:"4px",justifyContent:"center"}},
+            [0,1,2].map(i=>React.createElement("div",{key:i,style:{width:"8px",height:"8px",borderRadius:"50%",background:i<karte.richtig?"#3B6D11":"var(--color-background-secondary)",border:"1px solid var(--color-border-secondary)"}}))
+          )
+        ),
+        React.createElement("div",{className:"card-face back"},
+          React.createElement("div",{className:"card-badge antwort"},"ANTWORT"),
+          React.createElement("div",{className:"card-text"},karte.antwort)
+        )
+      )
+    ),
+    React.createElement("div",{className:"hint"},flipped?"War das richtig?":"Tippe zum Umdrehen"),
+    flipped&&React.createElement("div",{className:"action-btns"},
+      React.createElement("button",{className:"action-btn wrong",onClick:()=>next(false)},"✕  Nicht gewusst"),
+      React.createElement("button",{className:"action-btn right",onClick:()=>next(true)},"✓  Gewusst!")
+    )
+  );
+}
+
+function StapelModal({onClose,onSave}){
+  const [name,setName]=useState("");
+  const [emoji,setEmoji]=useState("📚");
+  return React.createElement("div",{className:"modal-overlay"},
+    React.createElement("div",{className:"modal"},
+      React.createElement("div",{className:"modal-header"},
+        React.createElement("span",{className:"modal-title"},"Neuer Stapel"),
+        React.createElement("button",{className:"btn-icon",onClick:onClose},"×")
+      ),
+      React.createElement("div",{className:"form-section"},
+        React.createElement("div",{className:"form-label"},"Name des Stapels"),
+        React.createElement("input",{className:"form-input",placeholder:"z. B. Biologie",value:name,onChange:e=>setName(e.target.value)})
+      ),
+      React.createElement("div",{className:"form-section"},
+        React.createElement("div",{className:"form-label"},"Symbol wählen"),
+        React.createElement("div",{className:"emoji-grid"},
+          EMOJIS.map(e=>React.createElement("button",{key:e,className:"emoji-pick"+(emoji===e?" selected":""),onClick:()=>setEmoji(e)},e))
+        )
+      ),
+      React.createElement("div",{className:"btn-row"},
+        React.createElement("button",{className:"btn",onClick:onClose},"Abbrechen"),
+        React.createElement("button",{className:"btn primary",disabled:!name.trim(),onClick:()=>onSave(name.trim(),emoji)},"Erstellen")
+      )
+    )
+  );
+}
+
+function KarteModal({onClose,onSave}){
+  const [frage,setFrage]=useState("");
+  const [antwort,setAntwort]=useState("");
+  function add(){if(frage.trim()&&antwort.trim()){onSave(frage.trim(),antwort.trim());setFrage("");setAntwort("")}}
+  return React.createElement("div",{className:"modal-overlay"},
+    React.createElement("div",{className:"modal"},
+      React.createElement("div",{className:"modal-header"},
+        React.createElement("span",{className:"modal-title"},"Neue Karte"),
+        React.createElement("button",{className:"btn-icon",onClick:onClose},"×")
+      ),
+      React.createElement("div",{className:"form-section"},
+        React.createElement("div",{className:"form-label"},"Frage / Vorderseite"),
+        React.createElement("textarea",{className:"form-input",rows:3,placeholder:"z. B. Was ist Photosynthese?",value:frage,onChange:e=>setFrage(e.target.value)})
+      ),
+      React.createElement("div",{className:"form-section"},
+        React.createElement("div",{className:"form-label"},"Antwort / Rückseite"),
+        React.createElement("textarea",{className:"form-input",rows:3,placeholder:"z. B. Umwandlung von Licht in Energie...",value:antwort,onChange:e=>setAntwort(e.target.value)})
+      ),
+      React.createElement("div",{className:"btn-row"},
+        React.createElement("button",{className:"btn",onClick:onClose},"Schließen"),
+        React.createElement("button",{className:"btn primary",disabled:!frage.trim()||!antwort.trim(),onClick:add},"Hinzufügen")
+      )
+    )
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+</script>
